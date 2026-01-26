@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          Int           @id @default(autoincrement())
+  name        String
+  email       String        @unique
+  password    String
+  role        Role          @default(USER)
+  submissions Submissions[]
+}
+
+model Problems {
+  id           String        @id @default(uuid())
+  name         String
+  tags         Tags[]
+  difficulty   Difficulty
+  time_limit   DateTime
+  memory_limit Int
+  published    Boolean       @default(true)
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+  submissions  Submissions[]
+}
+
+model Tags {
+  id      Int        @id @default(autoincrement())
+  title   String     @unique
+  problem Problems[]
+}
+
+model Submissions {
+  id           Int              @id @default(autoincrement())
+  submitted_at DateTime         @default(now())
+  problems     Problems         @relation(fields: [problemsId], references: [id])
+  problemsId   String
+  user         User             @relation(fields: [userId], references: [id])
+  userId       Int
+  status       SubmissionStatus @default(PENDING)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  HARD
+  MEDIUM
+}
+
+enum SubmissionStatus {
+  PENDING
+  AC
+  WA
+  TLE
+  RE
+  CE
+}
