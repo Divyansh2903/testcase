@@ -25,9 +25,13 @@ model User {
 model Problems {
   id           String        @id @default(uuid())
   name         String
+  description  String
+  examples     Example[]
   tags         Tags[]
+  test_cases   TestCase[]
+  starter_code StarterCode[]
   difficulty   Difficulty
-  time_limit   DateTime
+  time_limit   Int
   memory_limit Int
   published    Boolean       @default(true)
   created_at   DateTime      @default(now())
@@ -39,6 +43,31 @@ model Tags {
   id      Int        @id @default(autoincrement())
   title   String     @unique
   problem Problems[]
+}
+
+model Example {
+  id           String    @id @default(uuid())
+  input        String
+  output       String
+  explaination String
+  problems     Problems? @relation(fields: [problemsId], references: [id])
+  problemsId   String?
+}
+
+model TestCase {
+  id              String    @id @default(uuid())
+  input           String
+  expected_output String
+  problems        Problems? @relation(fields: [problemsId], references: [id])
+  problemsId      String?
+}
+
+model StarterCode {
+  id         String    @id @default(uuid())
+  language   Languages @default(JAVASCRIPT)
+  code       String
+  problems   Problems? @relation(fields: [problemsId], references: [id])
+  problemsId String?
 }
 
 model Submissions {
@@ -69,4 +98,10 @@ enum SubmissionStatus {
   TLE
   RE
   CE
+}
+
+enum Languages {
+  JAVASCRIPT
+  PYTHON
+  CPP
 }
