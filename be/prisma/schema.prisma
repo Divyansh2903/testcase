@@ -14,20 +14,20 @@ datasource db {
 }
 
 model User {
-  id          Int           @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
-  email       String        @unique
+  email       String       @unique
   password    String
-  role        Role          @default(USER)
-  submissions Submissions[]
+  role        Role         @default(USER)
+  submissions Submission[]
 }
 
-model Problems {
+model Problem {
   id           String        @id @default(uuid())
   name         String
   description  String
   examples     Example[]
-  tags         Tags[]
+  tags         Tag[]
   test_cases   TestCase[]
   starter_code StarterCode[]
   difficulty   Difficulty
@@ -36,48 +36,54 @@ model Problems {
   published    Boolean       @default(true)
   created_at   DateTime      @default(now())
   updated_at   DateTime      @updatedAt
-  submissions  Submissions[]
+  submissions  Submission[]
 }
 
-model Tags {
-  id      Int        @id @default(autoincrement())
-  title   String     @unique
-  problem Problems[]
+model Tag {
+  id      Int       @id @default(autoincrement())
+  title   String    @unique
+  problem Problem[]
 }
 
 model Example {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   input        String
   output       String
   explaination String
-  problems     Problems? @relation(fields: [problemsId], references: [id])
-  problemsId   String?
+  problems     Problem @relation(fields: [problemsId], references: [id])
+  problemsId   String
 }
 
 model TestCase {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   input           String
   expected_output String
-  problems        Problems? @relation(fields: [problemsId], references: [id])
-  problemsId      String?
+  visibility      Boolean  @default(false)
+  problems        Problem @relation(fields: [problemsId], references: [id])
+  problemsId      String
 }
 
 model StarterCode {
   id         String    @id @default(uuid())
   language   Languages @default(JAVASCRIPT)
   code       String
-  problems   Problems? @relation(fields: [problemsId], references: [id])
-  problemsId String?
+  problems   Problem  @relation(fields: [problemsId], references: [id])
+  problemsId String
 }
 
-model Submissions {
-  id           Int              @id @default(autoincrement())
-  submitted_at DateTime         @default(now())
-  problems     Problems         @relation(fields: [problemsId], references: [id])
-  problemsId   String
-  user         User             @relation(fields: [userId], references: [id])
-  userId       Int
-  status       SubmissionStatus @default(PENDING)
+model Submission {
+  id             Int              @id @default(autoincrement())
+  submitted_at   DateTime         @default(now())
+  submitted_code String
+  language_used  Languages
+  memory_used    Int?
+  runtime        Int?
+  error_message  String?
+  problems       Problem          @relation(fields: [problemsId], references: [id])
+  problemsId     String
+  user           User             @relation(fields: [userId], references: [id])
+  userId         Int
+  status         SubmissionStatus @default(PENDING)
 }
 
 enum Role {

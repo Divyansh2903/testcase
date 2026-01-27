@@ -3,6 +3,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import cors from "cors";
 import authRouter from "./routes/auth.js";
 import problemRouter from "./routes/problems.js";
+import { authMiddleware } from "./middlewares/authMiddleware.js";
 
 dotenv.config();
 const app=express();
@@ -12,7 +13,7 @@ app.use(express.json());
 app.use(cors());
 //routes
 app.use('/auth', authRouter);
-app.use('/problem', problemRouter);
+app.use('/problemset',authMiddleware, problemRouter);
 
 app.get("/health",(req,res)=>{
     res.send("Status Ok");
