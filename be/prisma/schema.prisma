@@ -46,7 +46,7 @@ model Tag {
 }
 
 model Example {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   input        String
   output       String
   explaination String
@@ -55,10 +55,10 @@ model Example {
 }
 
 model TestCase {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
   input           String
   expected_output String
-  visibility      Boolean  @default(false)
+  visibility      Boolean @default(false)
   problems        Problem @relation(fields: [problemsId], references: [id])
   problemsId      String
 }
@@ -67,23 +67,24 @@ model StarterCode {
   id         String    @id @default(uuid())
   language   Languages @default(JAVASCRIPT)
   code       String
-  problems   Problem  @relation(fields: [problemsId], references: [id])
+  problems   Problem   @relation(fields: [problemsId], references: [id])
   problemsId String
 }
 
 model Submission {
-  id             Int              @id @default(autoincrement())
-  submitted_at   DateTime         @default(now())
-  submitted_code String
-  language_used  Languages
-  memory_used    Int?
-  runtime        Int?
-  error_message  String?
-  problems       Problem          @relation(fields: [problemsId], references: [id])
-  problemsId     String
-  user           User             @relation(fields: [userId], references: [id])
-  userId         Int
-  status         SubmissionStatus @default(PENDING)
+  id               Int              @id @default(autoincrement())
+  submitted_at     DateTime         @default(now())
+  submitted_code   String
+  language_used    Languages
+  memory_used      Int?
+  runtime          Int?
+  error_message    String?
+  submission_token String?
+  problems         Problem          @relation(fields: [problemsId], references: [id])
+  problemsId       String
+  user             User             @relation(fields: [userId], references: [id])
+  userId           Int
+  status           SubmissionStatus @default(PENDING)
 }
 
 enum Role {

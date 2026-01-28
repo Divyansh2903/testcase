@@ -3,7 +3,7 @@ import { signinSchema, signupSchema } from "../zod/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { checkPassword, hashPassword } from "../helpers/passwordHelper.js";
 import jwt from "jsonwebtoken";
-import { JWTSECRET } from "../constants.js";
+import { JWTSECRET } from "../configs/constants.js";
 import { sendError } from "../helpers/responseHelpers.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -26,6 +26,11 @@ authRouter.post("/sign-up", async (req, res) => {
                 name,
                 email,
                 password: hashedPassword
+            },
+            select:{
+                name:true,
+                email:true,
+                role:true
             }
         });
         return res.status(201).json({

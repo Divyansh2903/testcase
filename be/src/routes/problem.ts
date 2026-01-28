@@ -2,6 +2,8 @@ import express from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { prisma } from "../lib/prisma.js";
 import { sendError } from "../helpers/responseHelpers.js";
+import axios from "axios";
+import { JUDGE0_URL } from "../configs/constants.js";
 
 const problemRouter = express.Router();
 
@@ -15,6 +17,7 @@ problemRouter.get("/get-all", async (req, res) => {
 
 problemRouter.get("/:id", async (req, res) => {
     const problemId = req.params.id as string;
+    console.log(problemId);
     if (!problemId) {
         return sendError(res, 400, "Please provide an id");
     }
