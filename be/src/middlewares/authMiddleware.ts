@@ -10,6 +10,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
     const token=authHeader?.split(" ")[1]??"";    
     const decoded=jwt.verify(token,JWTSECRET) as JwtPayload;
-    req.email=decoded.email;
+    req.userId=decoded.userId;
     next();
 }

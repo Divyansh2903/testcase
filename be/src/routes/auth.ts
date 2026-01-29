@@ -13,10 +13,7 @@ const authRouter = express.Router();
 authRouter.post("/sign-up", async (req, res) => {
     const parsed = signupSchema.safeParse(req.body);
     if (!parsed.success)
-        return res.status(400).json({
-            success: false,
-            error: "Invalid request schema",
-        });
+        return sendError(res,400,"Invalid request schema.");
     const { name, email, password } = parsed.data;
     const hashedPassword = await hashPassword(password);
     if (!hashedPassword) throw new Error("Password Hashing failed");
@@ -61,7 +58,7 @@ authRouter.post("/sign-in", async (req, res) => {
     if (!isPassCorrect) {
         return sendError(res, 401, "Incorrect Email or Password.");
     }
-    const token = jwt.sign({ email: user.email, role: user.role }, JWTSECRET);
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWTSECRET);
     return res.status(201).json({
         success: true,
         data: {
@@ -71,12 +68,12 @@ authRouter.post("/sign-in", async (req, res) => {
 })
 
 authRouter.get("/get-user",authMiddleware,async (req,res)=>{
-    if (!req.email) {
+    if (!req.userId) {
         return sendError(res, 401, "Unauthorized");
     }
     const user = await prisma.user.findUnique({
         where:{
-            email: req.email
+            id: req.userId
         },
         select:{
             id:true,
