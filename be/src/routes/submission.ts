@@ -172,7 +172,36 @@ submissionRouter.post("/:problemId", async (req, res) => {
 
 
     }
-})
+});
+
+submissionRouter.get("/:submissionId", async (req, res) => {
+    const submissionId = Number(req.params.submissionId);
+    if (!submissionId)
+        throw new Error("No submission id provided");
+    const submission = await prisma.submission.findUnique({
+        where: {
+            id: submissionId
+        },
+        select: {
+            testRuns: true
+        }
+    });
+    if (!submission) {
+        return sendError(res, 404, "Submission not found");
+    }
+    // const initialToken="";
+    // const tokenStr=submission.testRuns.reduce((acc,currentVal)=>acc+currentVal.submissionToken,initialToken);
+    const tokens = submission.testRuns.map((run) => run.submissionToken);
+    const tokenStr = tokens.join(",");
+    const { data } = await axios.get(`${JUDGE0_URL}/submissions/batch?tokens=${tokenStr}&base64_encoded=false&fields=token,stdout,stderr,status_id,language_id`, {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    console.log(data);
+
+
+});
 
 
 export default submissionRouter;
