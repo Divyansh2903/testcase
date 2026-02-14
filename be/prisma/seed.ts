@@ -27,7 +27,16 @@ async function main() {
   // Problem 1: Two Sum
   await prisma.problem.upsert({
     where: { id: "seed-two-sum" },
-    update: {},
+    update: {
+      testCases: {
+        deleteMany: {},
+        create: [
+          { input: "2 7 11 15\n9", expectedOutput: "0 1\n", visibility: true },
+          { input: "3 2 4\n6", expectedOutput: "1 2\n", visibility: true },
+          { input: "3 3\n6", expectedOutput: "0 1\n", visibility: false },
+        ],
+      },
+    },
     create: {
       id: "seed-two-sum",
       name: "Two Sum",
@@ -57,9 +66,9 @@ You can return the answer in any order.`,
       },
       testCases: {
         create: [
-          { input: "2 7 11 15\n9", expectedOutput: "0 1", visibility: true },
-          { input: "3 2 4\n6", expectedOutput: "1 2", visibility: true },
-          { input: "3 3\n6", expectedOutput: "0 1", visibility: false },
+          { input: "2 7 11 15\n9", expectedOutput: "0 1\n", visibility: true },
+          { input: "3 2 4\n6", expectedOutput: "1 2\n", visibility: true },
+          { input: "3 3\n6", expectedOutput: "0 1\n", visibility: false },
         ],
       },
       starterCodes: {
@@ -92,7 +101,15 @@ You can return the answer in any order.`,
   // Problem 2: Reverse String
   await prisma.problem.upsert({
     where: { id: "seed-reverse-string" },
-    update: {},
+    update: {
+      testCases: {
+        deleteMany: {},
+        create: [
+          { input: "hello", expectedOutput: "olleh\n", visibility: true },
+          { input: "abcd", expectedOutput: "dcba\n", visibility: false },
+        ],
+      },
+    },
     create: {
       id: "seed-reverse-string",
       name: "Reverse String",
@@ -115,8 +132,8 @@ You must do this by modifying the input array in-place with O(1) extra memory.`,
       },
       testCases: {
         create: [
-          { input: "hello", expectedOutput: "olleh", visibility: true },
-          { input: "abcd", expectedOutput: "dcba", visibility: false },
+          { input: "hello", expectedOutput: "olleh\n", visibility: true },
+          { input: "abcd", expectedOutput: "dcba\n", visibility: false },
         ],
       },
       starterCodes: {
@@ -141,7 +158,15 @@ You must do this by modifying the input array in-place with O(1) extra memory.`,
   // Problem 3: Fizz Buzz
   await prisma.problem.upsert({
     where: { id: "seed-fizz-buzz" },
-    update: {},
+    update: {
+      testCases: {
+        deleteMany: {},
+        create: [
+          { input: "3", expectedOutput: "1\n2\nFizz\n", visibility: true },
+          { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz\n", visibility: false },
+        ],
+      },
+    },
     create: {
       id: "seed-fizz-buzz",
       name: "Fizz Buzz",
@@ -168,8 +193,8 @@ Return the array for indices 1 to n (1-indexed).`,
       },
       testCases: {
         create: [
-          { input: "3", expectedOutput: "1 2 Fizz", visibility: true },
-          { input: "5", expectedOutput: "1 2 Fizz 4 Buzz", visibility: false },
+          { input: "3", expectedOutput: "1\n2\nFizz\n", visibility: true },
+          { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz\n", visibility: false },
         ],
       },
       starterCodes: {
@@ -196,7 +221,16 @@ Return the array for indices 1 to n (1-indexed).`,
   // Problem 4: Valid Anagram (Medium)
   await prisma.problem.upsert({
     where: { id: "seed-valid-anagram" },
-    update: {},
+    update: {
+      testCases: {
+        deleteMany: {},
+        create: [
+          { input: "anagram\nnagaram", expectedOutput: "true\n", visibility: true },
+          { input: "rat\ncar", expectedOutput: "false\n", visibility: true },
+          { input: "a\nab", expectedOutput: "false\n", visibility: false },
+        ],
+      },
+    },
     create: {
       id: "seed-valid-anagram",
       name: "Valid Anagram",
@@ -224,9 +258,9 @@ An Anagram is a word or phrase formed by rearranging the letters of a different 
       },
       testCases: {
         create: [
-          { input: "anagram\nnagaram", expectedOutput: "true", visibility: true },
-          { input: "rat\ncar", expectedOutput: "false", visibility: true },
-          { input: "a\nab", expectedOutput: "false", visibility: false },
+          { input: "anagram\nnagaram", expectedOutput: "true\n", visibility: true },
+          { input: "rat\ncar", expectedOutput: "false\n", visibility: true },
+          { input: "a\nab", expectedOutput: "false\n", visibility: false },
         ],
       },
       starterCodes: {
