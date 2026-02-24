@@ -8,7 +8,12 @@ import { JUDGE0_URL } from "../configs/constants.js";
 const problemRouter = express.Router();
 
 problemRouter.get("/get-all", async (req, res) => {
-    const allProblems = await prisma.problem.findMany();
+    const allProblems = await prisma.problem.findMany({
+        where: { published: true },
+        include: {
+            tags: { select: { title: true } },
+        },
+    });
     res.json({
         success: true,
         data: allProblems
@@ -25,6 +30,12 @@ problemRouter.get("/:id", async (req, res) => {
     const problem = await prisma.problem.findUnique({
         where: {
             id: problemId
+        },
+        include: {
+            examples: { select: { input: true, output: true, explanation: true } },
+            tags: { select: { title: true } },
+            testCases: { select: { input: true, expectedOutput: true } },
+            starterCodes: { select: { languageId: true, code: true } },
         }
     });
     if (!problem) {

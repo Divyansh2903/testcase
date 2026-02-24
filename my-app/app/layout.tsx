@@ -5,6 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 
 import './globals.css'
 import { ThemeProvider } from "../components/theme-provider"
+import { AuthProvider } from "@/lib/auth-context"
+import { QueryProvider } from "@/components/query-provider"
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -46,7 +48,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <QueryProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
         <Analytics />
       </body>

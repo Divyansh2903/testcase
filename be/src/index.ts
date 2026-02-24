@@ -1,17 +1,23 @@
 import dotenv from "dotenv";
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.js";
 import problemRouter from "./routes/problem.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import submissionRouter from "./routes/submission.js";
+import { FRONTEND_ORIGIN } from "./configs/constants.js";
 
 dotenv.config();
-const app=express();
-const PORT=4000;
+const app = express();
+const PORT = 4000;
 
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+  origin: FRONTEND_ORIGIN,
+  credentials: true,
+}));
 //routes
 app.use('/auth', authRouter);
 app.use('/problemset',authMiddleware, problemRouter);

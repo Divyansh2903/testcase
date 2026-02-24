@@ -55,7 +55,7 @@ export function ProblemsTable({ problems }: ProblemsTableProps) {
                   href={`/problem/${problem.slug}`}
                   className="font-medium text-foreground transition-colors hover:text-primary group-hover:underline underline-offset-4 decoration-border/70"
                 >
-                  {problem.id}. {problem.title}
+                 {problem.title}
                 </Link>
               </TableCell>
               <TableCell className="hidden md:table-cell">

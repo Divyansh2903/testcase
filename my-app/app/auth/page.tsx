@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Code2, Zap, Target, Trophy, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import useEmblaCarousel from "embla-carousel-react"
+import { authApi } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 
 const slides = [
   {
@@ -33,8 +36,18 @@ const slides = [
 ]
 
 export default function AuthPage() {
+  const router = useRouter()
+  const { setUser } = useAuth()
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true })
   const [currentSlide, setCurrentSlide] = useState(0)
+
+  const [signInEmail, setSignInEmail] = useState("")
+  const [signInPassword, setSignInPassword] = useState("")
+  const [signUpName, setSignUpName] = useState("")
+  const [signUpEmail, setSignUpEmail] = useState("")
+  const [signUpPassword, setSignUpPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const scrollPrev = () => emblaApi?.scrollPrev()
   const scrollNext = () => emblaApi?.scrollNext()
@@ -60,16 +73,34 @@ export default function AuthPage() {
     }
   }, [emblaApi])
 
-  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // UI only - no backend
-    console.log("Sign in form submitted")
+    setError(null)
+    setIsLoading(true)
+    try {
+      const res = await authApi.signIn(signInEmail, signInPassword)
+      setUser(res.data.user)
+      router.push("/problems")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // UI only - no backend
-    console.log("Sign up form submitted")
+    setError(null)
+    setIsLoading(true)
+    try {
+      const res = await authApi.signUp(signUpName, signUpEmail, signUpPassword)
+      setUser(res.data)
+      router.push("/problems")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign up failed")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -158,11 +189,17 @@ export default function AuthPage() {
           </div>
 
           {/* Auth Tabs */}
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue="signin" className="w-full" onValueChange={() => setError(null)}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
+
+            {error && (
+              <p className="text-sm text-destructive mt-4 text-center" role="alert">
+                {error}
+              </p>
+            )}
 
             <TabsContent value="signin" className="space-y-4 mt-6">
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -172,7 +209,10 @@ export default function AuthPage() {
                     id="signin-email"
                     type="email"
                     placeholder="you@example.com"
+                    value={signInEmail}
+                    onChange={(e) => setSignInEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -190,11 +230,14 @@ export default function AuthPage() {
                     id="signin-password"
                     type="password"
                     placeholder="Enter your password"
+                    value={signInPassword}
+                    onChange={(e) => setSignInPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg">
-                  Sign In
+                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                  {isLoading ? "Signing in…" : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
@@ -207,7 +250,10 @@ export default function AuthPage() {
                     id="signup-name"
                     type="text"
                     placeholder="John Doe"
+                    value={signUpName}
+                    onChange={(e) => setSignUpName(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -216,7 +262,10 @@ export default function AuthPage() {
                     id="signup-email"
                     type="email"
                     placeholder="you@example.com"
+                    value={signUpEmail}
+                    onChange={(e) => setSignUpEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -225,11 +274,14 @@ export default function AuthPage() {
                     id="signup-password"
                     type="password"
                     placeholder="Create a strong password"
+                    value={signUpPassword}
+                    onChange={(e) => setSignUpPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg">
-                  Sign Up
+                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                  {isLoading ? "Creating account…" : "Sign Up"}
                 </Button>
               </form>
             </TabsContent>

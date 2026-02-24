@@ -3,7 +3,12 @@ import { signinSchema, signupSchema } from "../zod/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { checkPassword, hashPassword } from "../helpers/passwordHelper.js";
 import jwt from "jsonwebtoken";
-import { JWTSECRET } from "../configs/constants.js";
+import {
+    JWTSECRET,
+    AUTH_COOKIE_NAME,
+    AUTH_COOKIE_MAX_AGE_DAYS,
+    IS_PRODUCTION,
+} from "../configs/constants.js";
 import { sendError } from "../helpers/responseHelpers.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -25,10 +30,19 @@ authRouter.post("/sign-up", async (req, res) => {
                 password: hashedPassword
             },
             select:{
+                id: true,
                 name:true,
                 email:true,
                 role:true
             }
+        });
+        const token = jwt.sign({ userId: user.id, role: user.role }, JWTSECRET);
+        res.cookie(AUTH_COOKIE_NAME, token, {
+            httpOnly: true,
+            secure: IS_PRODUCTION,
+            sameSite: "lax",
+            maxAge: AUTH_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+            path: "/",
         });
         return res.status(201).json({
             success: true,
@@ -59,13 +73,23 @@ authRouter.post("/sign-in", async (req, res) => {
         return sendError(res, 401, "Incorrect Email or Password.");
     }
     const token = jwt.sign({ userId: user.id, role: user.role }, JWTSECRET);
+    res.cookie(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: IS_PRODUCTION,
+        sameSite: "lax",
+        maxAge: AUTH_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+        path: "/",
+    });
     return res.status(201).json({
         success: true,
-        data: {
-            token
-        }
+        data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
     });
-})
+});
+
+authRouter.post("/sign-out", (_req, res) => {
+    res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
+    return res.status(200).json({ success: true });
+});
 
 authRouter.get("/get-user",authMiddleware,async (req,res)=>{
     if (!req.userId) {

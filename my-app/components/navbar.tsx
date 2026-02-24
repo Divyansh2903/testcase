@@ -1,15 +1,29 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Code2, LayoutDashboard, Trophy, User } from "lucide-react"
+import { Code2, LayoutDashboard, LogOut, Trophy, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/lib/auth-context"
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, isLoading, signOut } = useAuth()
   const isAdmin = pathname.startsWith("/admin")
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push("/")
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -50,22 +64,45 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button
-            asChild
-            variant={isAdmin ? "default" : "outline"}
-            size="sm"
-            className="gap-2 hover:text-foreground"
-          >
-            <Link href="/admin">
-              <LayoutDashboard className="h-4 w-4" />
-              Admin
-            </Link>
-          </Button>
+          {user?.role === "ADMIN" && (
+            <Button
+              asChild
+              variant={isAdmin ? "default" : "outline"}
+              size="sm"
+              className="gap-2 hover:text-foreground"
+            >
+              <Link href="/admin">
+                <LayoutDashboard className="h-4 w-4" />
+                Admin
+              </Link>
+            </Button>
+          )}
           <ThemeToggle />
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <User className="h-5 w-5" />
-            <span className="sr-only">User profile</span>
-          </Button>
+          {!isLoading && (
+            user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full gap-2">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">User menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                    {user.name}
+                  </div>
+                  <DropdownMenuItem onClick={handleSignOut} className="gap-2 cursor-pointer">
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/auth">Sign In</Link>
+              </Button>
+            )
+          )}
         </div>
       </div>
     </header>
