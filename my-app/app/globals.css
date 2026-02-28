@@ -4,11 +4,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light mode colors */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0 0);
+  /* Light mode colors — slightly warm, no pure black */
+  --background: oklch(0.98 0.002 100);
+  --foreground: oklch(0.22 0.01 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
+  --card-foreground: oklch(0.2 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
   --primary: oklch(0.55 0.2 145);
@@ -39,18 +39,18 @@
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: oklch(0.55 0.2 145);
   
-  /* Difficulty colors */
-  --easy: oklch(0.6 0.2 145);
+  /* Difficulty colors — slightly muted green to reduce neon */
+  --easy: oklch(0.58 0.16 148);
   --medium: oklch(0.65 0.18 85);
   --hard: oklch(0.55 0.22 25);
 }
 
 .dark {
-  /* Dark mode colors */
-  --background: oklch(0.09 0 0);
-  --foreground: oklch(0.95 0 0);
+  /* Dark mode colors — slightly warm dark (no pure black/white) */
+  --background: oklch(0.1 0.005 260);
+  --foreground: oklch(0.9 0.01 260);
   --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.95 0 0);
+  --card-foreground: oklch(0.92 0 0);
   --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.95 0 0);
   --primary: oklch(0.65 0.2 145);
@@ -80,8 +80,8 @@
   --sidebar-border: oklch(0.22 0 0);
   --sidebar-ring: oklch(0.65 0.2 145);
   
-  /* Difficulty colors for dark mode */
-  --easy: oklch(0.7 0.2 145);
+  /* Difficulty colors for dark mode — slightly muted */
+  --easy: oklch(0.65 0.15 148);
   --medium: oklch(0.75 0.18 85);
   --hard: oklch(0.6 0.22 25);
 }
@@ -195,4 +195,9 @@
   transform-origin: center center;
   mix-blend-mode: normal;
   background: var(--overlay-color);
+}
+
+@keyframes stats-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.15); }
 }

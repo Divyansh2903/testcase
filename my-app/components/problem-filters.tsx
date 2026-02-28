@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Search, Filter, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 import type { Difficulty, ProblemStatus } from "@/lib/types"
 
 interface ProblemFiltersProps {
@@ -33,6 +34,8 @@ export function ProblemFilters({
   allTags,
 }: ProblemFiltersProps) {
   const [showFilters, setShowFilters] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const filterBtnRef = useRef<HTMLButtonElement>(null)
 
   const toggleDifficulty = (difficulty: Difficulty) => {
     if (difficulties.includes(difficulty)) {
@@ -71,30 +74,58 @@ export function ProblemFilters({
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div
+          className={cn(
+            "group relative flex-1 transition-[box-shadow,transform] duration-300 ease-out",
+            searchFocused && "ring-2 ring-ring/30 rounded-md scale-[1.01]"
+          )}
+        >
+          <Search
+            className={cn(
+              "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200",
+              "group-hover:rotate-12"
+            )}
+          />
           <Input
             placeholder="Search problems..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 bg-secondary/60 border-border focus-visible:bg-background transition-colors"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            className={cn(
+              "pl-10 bg-secondary/60 border-border/80",
+              "focus-visible:bg-background focus-visible:border-ring",
+              "focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:shadow-[0_0_0_3px_var(--ring)]",
+              "transition-[box-shadow,border-color,background-color] duration-200 ease-out",
+              "placeholder:transition-opacity duration-200 placeholder:opacity-70",
+              search && "placeholder:opacity-0"
+            )}
           />
         </div>
         <Button
+          ref={filterBtnRef}
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
-          className="gap-2"
+          className={cn(
+            "gap-2 relative transition-transform duration-150 active:scale-[0.98]",
+            "hover:border-primary/30"
+          )}
         >
-          <Filter className="h-4 w-4" />
+          <Filter
+            className={cn("h-4 w-4 transition-transform duration-200", "hover:rotate-12")}
+          />
           Filters
           {hasActiveFilters && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-              {difficulties.length + statuses.length + selectedTags.length + (search ? 1 : 0)}
-            </Badge>
+            <>
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-easy ring-2 ring-background" />
+              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {difficulties.length + statuses.length + selectedTags.length + (search ? 1 : 0)}
+              </Badge>
+            </>
           )}
         </Button>
         {hasActiveFilters && (
-          <Button variant="ghost" onClick={clearFilters} size="icon">
+          <Button variant="ghost" onClick={clearFilters} size="icon" className="transition-transform duration-150 active:scale-95">
             <X className="h-4 w-4" />
             <span className="sr-only">Clear filters</span>
           </Button>
@@ -102,7 +133,7 @@ export function ProblemFilters({
       </div>
 
       {showFilters && (
-        <div className="grid gap-6 p-4 sm:p-5 rounded-lg border border-border bg-card shadow-sm sm:grid-cols-3">
+        <div className="grid gap-6 p-4 sm:p-5 rounded-xl border border-border/80 bg-card shadow-[0_1px_3px_0_rgba(0,0,0,0.06)] dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)] sm:grid-cols-3">
           <div className="space-y-3">
             <h4 className="text-sm font-medium">Difficulty</h4>
             <div className="space-y-2">

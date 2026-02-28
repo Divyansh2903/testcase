@@ -1,6 +1,7 @@
 import { DifficultyBadge } from "@/components/difficulty-badge"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { displayAcceptance } from "@/lib/acceptance"
 import type { Problem } from "@/lib/types"
 
 interface ProblemDescriptionProps {
@@ -71,7 +72,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
         </div>
 
         <div className="flex items-center gap-6 text-xs text-muted-foreground pt-4 border-t border-border">
-          <span>Acceptance: {problem.acceptance}%</span>
+          <span>Acceptance: {displayAcceptance(problem).toFixed(1)}%</span>
           <span>Submissions: {problem.submissions.toLocaleString()}</span>
         </div>
       </div>

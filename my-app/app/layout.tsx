@@ -7,6 +7,7 @@ import './globals.css'
 import { ThemeProvider } from "../components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
 import { QueryProvider } from "@/components/query-provider"
+import { PageTransition } from "@/components/page-transition"
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -50,7 +51,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              {children}
+              <PageTransition>{children}</PageTransition>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

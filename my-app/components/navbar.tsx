@@ -39,7 +39,7 @@ export function Navbar() {
           <Link
             href="/problems"
             className={cn(
-              "relative text-sm font-medium transition-colors hover:text-primary after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-px after:bg-primary after:origin-left after:transition-transform",
+              "relative text-sm font-medium transition-colors duration-150 hover:text-primary after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-px after:bg-primary after:origin-left after:transition-transform after:duration-200 after:ease-out",
               pathname === "/problems" || pathname.startsWith("/problem/")
                 ? "text-primary after:scale-x-100"
                 : "text-muted-foreground after:scale-x-0 hover:after:scale-x-100 after:opacity-40"
@@ -50,7 +50,7 @@ export function Navbar() {
           <Link
             href="/leaderboard"
             className={cn(
-              "relative text-sm font-medium transition-colors hover:text-primary after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-px after:bg-primary after:origin-left after:transition-transform",
+              "relative text-sm font-medium transition-colors duration-150 hover:text-primary after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-px after:bg-primary after:origin-left after:transition-transform after:duration-200 after:ease-out",
               pathname === "/leaderboard"
                 ? "text-primary after:scale-x-100"
                 : "text-muted-foreground after:scale-x-0 hover:after:scale-x-100 after:opacity-40"

@@ -58,7 +58,7 @@ export function ThemeToggle() {
                 ref={buttonRef}
                 variant="ghost"
                 size="icon"
-                className="rounded-full relative z-10 transition-transform duration-150 active:scale-90"
+                className="rounded-full relative z-10 transition-transform duration-200 ease-out hover:rotate-12 active:scale-90"
                 onClick={handleClick}
             >
                 {theme === "dark" ? (

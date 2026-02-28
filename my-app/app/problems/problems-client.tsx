@@ -83,6 +83,8 @@ export function ProblemsPageClient({
           totalProblems={totalProblems}
           streak={7}
           rank={15423}
+          rankTrend="up"
+          solvedToday={0}
         />
 
         <ProblemFilters
