@@ -39,17 +39,17 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           {problem.examples.map((example, index) => (
             <div key={index} className="space-y-2">
               <h3 className="text-sm font-medium">Example {index + 1}:</h3>
-              <div className="bg-secondary/50 rounded-lg p-4 space-y-2 font-mono text-sm">
-                <div>
+              <div className="bg-secondary/50 rounded-lg p-4 space-y-2 font-mono text-sm min-w-0 overflow-x-auto break-words">
+                <div className="min-w-0">
                   <span className="text-muted-foreground">Input: </span>
-                  <span className="text-foreground">{example.input}</span>
+                  <span className="text-foreground break-all">{example.input}</span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <span className="text-muted-foreground">Output: </span>
-                  <span className="text-foreground">{example.output}</span>
+                  <span className="text-foreground break-all">{example.output}</span>
                 </div>
                 {example.explanation && (
-                  <div className="text-muted-foreground text-xs pt-1">
+                  <div className="text-muted-foreground text-xs pt-1 min-w-0 break-words">
                     <span className="font-semibold">Explanation: </span>
                     {example.explanation}
                   </div>
