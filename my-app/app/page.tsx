@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight, Code2, Zap, Target, Trophy, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Navbar } from "../components/navbar"
+import { RedirectIfAuth } from "@/components/redirect-if-auth"
 
 const features = [
   {
@@ -37,6 +38,7 @@ const benefits = [
 
 export default function LandingPage() {
   return (
+    <RedirectIfAuth>
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
@@ -130,5 +132,6 @@ export default function LandingPage() {
         </section>
       </main>
     </div>
+    </RedirectIfAuth>
   )
 }

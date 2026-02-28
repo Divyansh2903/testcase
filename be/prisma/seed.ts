@@ -1,8 +1,5 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client.js";
-import { prisma } from "../src/lib/prisma.js";
-
+import type { PrismaClient } from "../src/generated/prisma/client.js";
 
 // Judge0-style language IDs (commonly used)
 const LANG = {
@@ -13,7 +10,30 @@ const LANG = {
   TYPESCRIPT: 74,
 } as const;
 
-async function main() {
+// Expected output format: no trailing newline; multi-line uses \n between lines only.
+// This avoids Judge0 WA when user prints with/without trailing newline (app normalizes both).
+const TC = {
+  twoSum: [
+    { input: "2 7 11 15\n9", expectedOutput: "0 1", visibility: true },
+    { input: "3 2 4\n6", expectedOutput: "1 2", visibility: true },
+    { input: "3 3\n6", expectedOutput: "0 1", visibility: false },
+  ],
+  reverseString: [
+    { input: "hello", expectedOutput: "olleh", visibility: true },
+    { input: "abcd", expectedOutput: "dcba", visibility: false },
+  ],
+  fizzBuzz: [
+    { input: "3", expectedOutput: "1\n2\nFizz", visibility: true },
+    { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz", visibility: false },
+  ],
+  validAnagram: [
+    { input: "anagram\nnagaram", expectedOutput: "true", visibility: true },
+    { input: "rat\ncar", expectedOutput: "false", visibility: true },
+    { input: "a\nab", expectedOutput: "false", visibility: false },
+  ],
+} as const;
+
+export async function main(prisma: PrismaClient) {
   // Create tags (shared across problems)
   const tags = await Promise.all([
     prisma.tag.upsert({ where: { title: "Arrays" }, update: {}, create: { title: "Arrays" } }),
@@ -30,10 +50,55 @@ async function main() {
     update: {
       testCases: {
         deleteMany: {},
+        create: TC.twoSum.map((tc) => ({ ...tc })),
+      },
+      starterCodes: {
+        deleteMany: {},
         create: [
-          { input: "2 7 11 15\n9", expectedOutput: "0 1\n", visibility: true },
-          { input: "3 2 4\n6", expectedOutput: "1 2\n", visibility: true },
-          { input: "3 3\n6", expectedOutput: "0 1\n", visibility: false },
+          {
+            languageId: LANG.JAVASCRIPT,
+            code: `function twoSum(nums, target) {
+  // Your code here
+  return [];
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim().split('\\n');
+const nums = input[0].split(' ').map(Number);
+const target = Number(input[1]);
+console.log(twoSum(nums, target).join(' '));`,
+          },
+          {
+            languageId: LANG.PYTHON,
+            code: `def two_sum(nums: list[int], target: int) -> list[int]:
+    # Your code here
+    return []
+
+import sys
+lines = sys.stdin.read().strip().split('\\n')
+nums = list(map(int, lines[0].split()))
+target = int(lines[1])
+print(' '.join(map(str, two_sum(nums, target))))`,
+          },
+          {
+            languageId: LANG.CPP,
+            code: `#include <iostream>
+#include <sstream>
+#include <vector>
+using namespace std;
+vector<int> twoSum(vector<int>& nums, int target) {
+  // Your code here
+  return {};
+}
+int main() {
+  string line; getline(cin, line);
+  vector<int> nums;
+  int x; istringstream iss(line);
+  while (iss >> x) nums.push_back(x);
+  int target; cin >> target;
+  vector<int> ans = twoSum(nums, target);
+  cout << ans[0] << " " << ans[1];
+  return 0;
+}`,
+          },
         ],
       },
     },
@@ -65,11 +130,7 @@ You can return the answer in any order.`,
         ],
       },
       testCases: {
-        create: [
-          { input: "2 7 11 15\n9", expectedOutput: "0 1\n", visibility: true },
-          { input: "3 2 4\n6", expectedOutput: "1 2\n", visibility: true },
-          { input: "3 3\n6", expectedOutput: "0 1\n", visibility: false },
-        ],
+        create: TC.twoSum.map((tc) => ({ ...tc })),
       },
       starterCodes: {
         create: [
@@ -78,19 +139,43 @@ You can return the answer in any order.`,
             code: `function twoSum(nums, target) {
   // Your code here
   return [];
-}`,
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim().split('\\n');
+const nums = input[0].split(' ').map(Number);
+const target = Number(input[1]);
+console.log(twoSum(nums, target).join(' '));`,
           },
           {
             languageId: LANG.PYTHON,
             code: `def two_sum(nums: list[int], target: int) -> list[int]:
     # Your code here
-    return []`,
+    return []
+
+import sys
+lines = sys.stdin.read().strip().split('\\n')
+nums = list(map(int, lines[0].split()))
+target = int(lines[1])
+print(' '.join(map(str, two_sum(nums, target))))`,
           },
           {
             languageId: LANG.CPP,
-            code: `vector<int> twoSum(vector<int>& nums, int target) {
-    // Your code here
-    return {};
+            code: `#include <iostream>
+#include <sstream>
+#include <vector>
+using namespace std;
+vector<int> twoSum(vector<int>& nums, int target) {
+  // Your code here
+  return {};
+}
+int main() {
+  string line; getline(cin, line);
+  vector<int> nums;
+  int x; istringstream iss(line);
+  while (iss >> x) nums.push_back(x);
+  int target; cin >> target;
+  vector<int> ans = twoSum(nums, target);
+  cout << ans[0] << " " << ans[1];
+  return 0;
 }`,
           },
         ],
@@ -104,9 +189,32 @@ You can return the answer in any order.`,
     update: {
       testCases: {
         deleteMany: {},
+        create: TC.reverseString.map((tc) => ({ ...tc })),
+      },
+      starterCodes: {
+        deleteMany: {},
         create: [
-          { input: "hello", expectedOutput: "olleh\n", visibility: true },
-          { input: "abcd", expectedOutput: "dcba\n", visibility: false },
+          {
+            languageId: LANG.JAVASCRIPT,
+            code: `function reverseString(s) {
+  // Your code here (modify s in-place)
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim();
+const s = input.split('');
+reverseString(s);
+console.log(s.join(''));`,
+          },
+          {
+            languageId: LANG.PYTHON,
+            code: `def reverse_string(s: list[str]) -> None:
+    # Your code here (modify s in-place)
+    pass
+
+import sys
+s = list(sys.stdin.read().strip())
+reverse_string(s)
+print(''.join(s))`,
+          },
         ],
       },
     },
@@ -131,24 +239,30 @@ You must do this by modifying the input array in-place with O(1) extra memory.`,
         ],
       },
       testCases: {
-        create: [
-          { input: "hello", expectedOutput: "olleh\n", visibility: true },
-          { input: "abcd", expectedOutput: "dcba\n", visibility: false },
-        ],
+        create: TC.reverseString.map((tc) => ({ ...tc })),
       },
       starterCodes: {
         create: [
           {
             languageId: LANG.JAVASCRIPT,
             code: `function reverseString(s) {
-  // Your code here
-}`,
+  // Your code here (modify s in-place)
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim();
+const s = input.split('');
+reverseString(s);
+console.log(s.join(''));`,
           },
           {
             languageId: LANG.PYTHON,
             code: `def reverse_string(s: list[str]) -> None:
     # Your code here (modify s in-place)
-    pass`,
+    pass
+
+import sys
+s = list(sys.stdin.read().strip())
+reverse_string(s)
+print(''.join(s))`,
           },
         ],
       },
@@ -161,9 +275,31 @@ You must do this by modifying the input array in-place with O(1) extra memory.`,
     update: {
       testCases: {
         deleteMany: {},
+        create: TC.fizzBuzz.map((tc) => ({ ...tc })),
+      },
+      starterCodes: {
+        deleteMany: {},
         create: [
-          { input: "3", expectedOutput: "1\n2\nFizz\n", visibility: true },
-          { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz\n", visibility: false },
+          {
+            languageId: LANG.JAVASCRIPT,
+            code: `function fizzBuzz(n) {
+  const answer = [];
+  // Your code here
+  return answer;
+}
+const n = parseInt(require('fs').readFileSync(0, 'utf-8').trim(), 10);
+console.log(fizzBuzz(n).join('\\n'));`,
+          },
+          {
+            languageId: LANG.PYTHON,
+            code: `def fizz_buzz(n: int) -> list[str]:
+    # Your code here
+    return []
+
+import sys
+n = int(sys.stdin.read().strip())
+print('\\n'.join(fizz_buzz(n)))`,
+          },
         ],
       },
     },
@@ -192,10 +328,7 @@ Return the array for indices 1 to n (1-indexed).`,
         ],
       },
       testCases: {
-        create: [
-          { input: "3", expectedOutput: "1\n2\nFizz\n", visibility: true },
-          { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz\n", visibility: false },
-        ],
+        create: TC.fizzBuzz.map((tc) => ({ ...tc })),
       },
       starterCodes: {
         create: [
@@ -205,13 +338,19 @@ Return the array for indices 1 to n (1-indexed).`,
   const answer = [];
   // Your code here
   return answer;
-}`,
+}
+const n = parseInt(require('fs').readFileSync(0, 'utf-8').trim(), 10);
+console.log(fizzBuzz(n).join('\\n'));`,
           },
           {
             languageId: LANG.PYTHON,
             code: `def fizz_buzz(n: int) -> list[str]:
     # Your code here
-    return []`,
+    return []
+
+import sys
+n = int(sys.stdin.read().strip())
+print('\\n'.join(fizz_buzz(n)))`,
           },
         ],
       },
@@ -224,10 +363,32 @@ Return the array for indices 1 to n (1-indexed).`,
     update: {
       testCases: {
         deleteMany: {},
+        create: TC.validAnagram.map((tc) => ({ ...tc })),
+      },
+      starterCodes: {
+        deleteMany: {},
         create: [
-          { input: "anagram\nnagaram", expectedOutput: "true\n", visibility: true },
-          { input: "rat\ncar", expectedOutput: "false\n", visibility: true },
-          { input: "a\nab", expectedOutput: "false\n", visibility: false },
+          {
+            languageId: LANG.JAVASCRIPT,
+            code: `function isAnagram(s, t) {
+  // Your code here
+  return false;
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim().split('\\n');
+const s = input[0], t = input[1];
+console.log(isAnagram(s, t));`,
+          },
+          {
+            languageId: LANG.PYTHON,
+            code: `def is_anagram(s: str, t: str) -> bool:
+    # Your code here
+    return False
+
+import sys
+lines = sys.stdin.read().strip().split('\\n')
+s, t = lines[0], lines[1]
+print(str(is_anagram(s, t)).lower())`,
+          },
         ],
       },
     },
@@ -257,11 +418,7 @@ An Anagram is a word or phrase formed by rearranging the letters of a different 
         ],
       },
       testCases: {
-        create: [
-          { input: "anagram\nnagaram", expectedOutput: "true\n", visibility: true },
-          { input: "rat\ncar", expectedOutput: "false\n", visibility: true },
-          { input: "a\nab", expectedOutput: "false\n", visibility: false },
-        ],
+        create: TC.validAnagram.map((tc) => ({ ...tc })),
       },
       starterCodes: {
         create: [
@@ -270,13 +427,21 @@ An Anagram is a word or phrase formed by rearranging the letters of a different 
             code: `function isAnagram(s, t) {
   // Your code here
   return false;
-}`,
+}
+const input = require('fs').readFileSync(0, 'utf-8').trim().split('\\n');
+const s = input[0], t = input[1];
+console.log(isAnagram(s, t));`,
           },
           {
             languageId: LANG.PYTHON,
             code: `def is_anagram(s: str, t: str) -> bool:
     # Your code here
-    return False`,
+    return False
+
+import sys
+lines = sys.stdin.read().strip().split('\\n')
+s, t = lines[0], lines[1]
+print(str(is_anagram(s, t)).lower())`,
           },
         ],
       },
@@ -285,13 +450,3 @@ An Anagram is a word or phrase formed by rearranging the letters of a different 
 
   console.log("Seed completed: problems, tags, examples, test cases, and starter codes created.");
 }
-
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });

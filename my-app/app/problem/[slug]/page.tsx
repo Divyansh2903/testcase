@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, use, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useState, use, useEffect, useRef } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Play, Send, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, Play, Send, RotateCcw, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -16,6 +16,7 @@ import {
 import { CodeEditor } from "@/components/code-editor"
 import { ProblemDescription } from "@/components/problem-description"
 import { TestResults, type TestResult } from "@/components/test-results"
+import { AuthGuard } from "@/components/auth-guard"
 import { problems as localProblems } from "@/lib/data"
 import { isDBloaded } from "@/lib/config"
 import {
@@ -39,6 +40,7 @@ export default function ProblemPage({
   params: Promise<{ slug: string }>
 }) {
   const slugOrId = use(params).slug
+  const queryClient = useQueryClient()
 
   const problemQuery = useQuery({
     queryKey: ["problem", slugOrId],
@@ -47,6 +49,8 @@ export default function ProblemPage({
       return data ? mapBackendProblemToDetail(data) : null
     },
     enabled: isDBloaded,
+    refetchOnMount: "always",
+    staleTime: 0,
   })
 
   const problemFromDb = problemQuery.data
@@ -60,35 +64,87 @@ export default function ProblemPage({
   const [languageId, setLanguageId] = useState<number>(63)
   const [languages, setLanguages] = useState<SubmissionLanguage[]>([])
   const [code, setCode] = useState("")
+  const codeByLanguageRef = useRef<Partial<Record<"javascript" | "python" | "cpp", string>>>({})
+  const codeByLanguageLoadedRef = useRef(false)
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [activeTab, setActiveTab] = useState("testcase")
   const [isRunning, setIsRunning] = useState(false)
   const [panelWidth, setPanelWidth] = useState(45)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const solvedLanguageKeyRef = useRef<"javascript" | "python" | "cpp" | null>(null)
 
   useEffect(() => {
-    if (problem) {
+    if (!problem) return
+    setTestResults(
+      problem.testCases.map((tc, index) => ({
+        id: index + 1,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        status: "idle" as const,
+      }))
+    )
+    const saved = codeByLanguageRef.current[languageKey]
+    if (saved !== undefined) {
+      setCode(saved)
+    } else {
       setCode(problem.starterCode[languageKey])
-      setTestResults(
-        problem.testCases.map((tc, index) => ({
-          id: index + 1,
-          input: tc.input,
-          expectedOutput: tc.expectedOutput,
-          status: "idle" as const,
-        }))
-      )
     }
   }, [problem, languageKey])
 
   useEffect(() => {
-    if (!isDBloaded || !problem) return
+    if (!isDBloaded || !problem || codeByLanguageLoadedRef.current) return
+    codeByLanguageLoadedRef.current = true
+    const keyMap = JUDGE0_ID_TO_KEY
+    async function loadSavedCode() {
+      const p = problem
+      if (!p) return
+      const [byLang, lastAccepted] = await Promise.all([
+        submissionApi.getLastByLanguage(p.id),
+        submissionApi.getLastAccepted(p.id),
+      ])
+      if (byLang) {
+        const langIds = Object.keys(byLang).map(Number)
+        for (const id of langIds) {
+          const key = keyMap[id as keyof typeof keyMap]
+          if (key && byLang[id]) {
+            codeByLanguageRef.current[key] = byLang[id].submittedCode
+          }
+        }
+      }
+      if (lastAccepted) {
+        const key = keyMap[lastAccepted.languageId as keyof typeof keyMap] ?? "javascript"
+        solvedLanguageKeyRef.current = key
+        codeByLanguageRef.current[key] = lastAccepted.submittedCode
+        setLanguageId(lastAccepted.languageId)
+        setLanguageKey(key)
+        setCode(lastAccepted.submittedCode)
+      } else {
+        const key = languageKey
+        setCode(codeByLanguageRef.current[key] ?? p.starterCode[key])
+      }
+    }
+    loadSavedCode()
+  }, [isDBloaded, problem?.id])
+
+  useEffect(() => {
+    solvedLanguageKeyRef.current = null
+    codeByLanguageRef.current = {}
+    codeByLanguageLoadedRef.current = false
+  }, [problem?.id])
+
+  useEffect(() => {
+    const p = problem
+    if (!isDBloaded || !p) return
     submissionApi.getLanguages().then((list) => {
       const filtered = list.filter((l) => SUPPORTED_LANG_IDS.includes(l.id))
       setLanguages(filtered)
       if (filtered.length && !filtered.some((l) => l.id === languageId)) {
         const first = filtered[0]
         setLanguageId(first.id)
-        setLanguageKey(JUDGE0_ID_TO_KEY[first.id] ?? "javascript")
-        setCode(problem.starterCode[JUDGE0_ID_TO_KEY[first.id] ?? "javascript"])
+        const key = JUDGE0_ID_TO_KEY[first.id] ?? "javascript"
+        setLanguageKey(key)
+        const saved = codeByLanguageRef.current[key]
+        setCode(saved ?? p.starterCode[key])
       }
     })
   }, [isDBloaded, problem])
@@ -97,38 +153,53 @@ export default function ProblemPage({
   if (isDBloaded && !loading && !problem) notFound()
   if (isDBloaded && fetchError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-2">{fetchError}</p>
-          <Button asChild variant="outline">
-            <Link href="/problems">Back to Problems</Link>
-          </Button>
+      <AuthGuard>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-destructive mb-2">{fetchError}</p>
+            <Button asChild variant="outline">
+              <Link href="/problems">Back to Problems</Link>
+            </Button>
+          </div>
         </div>
-      </div>
+      </AuthGuard>
     )
   }
   if (!problem) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-        Loading…
-      </div>
+      <AuthGuard>
+        <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+          Loading…
+        </div>
+      </AuthGuard>
     )
   }
 
   const handleLanguageChangeLocal = (newKey: "javascript" | "python" | "cpp") => {
+    codeByLanguageRef.current[languageKey] = code
     setLanguageKey(newKey)
-    setCode(problem.starterCode[newKey])
+    const saved = codeByLanguageRef.current[newKey]
+    setCode(saved !== undefined ? saved : problem.starterCode[newKey])
   }
 
   const handleLanguageChangeDb = (id: number) => {
     const key = JUDGE0_ID_TO_KEY[id] ?? "javascript"
+    codeByLanguageRef.current[languageKey] = code
     setLanguageId(id)
     setLanguageKey(key)
-    setCode(problem.starterCode[key])
+    const saved = codeByLanguageRef.current[key]
+    setCode(saved !== undefined ? saved : problem.starterCode[key])
+  }
+
+  const handleCodeChange = (value: string) => {
+    codeByLanguageRef.current[languageKey] = value
+    setCode(value)
   }
 
   const handleReset = () => {
-    setCode(problem.starterCode[languageKey])
+    const starter = problem.starterCode[languageKey]
+    codeByLanguageRef.current[languageKey] = starter
+    setCode(starter)
     setTestResults(
       problem.testCases.map((tc, index) => ({
         id: index + 1,
@@ -140,29 +211,35 @@ export default function ProblemPage({
   }
 
   const handleRun = async () => {
+    const count = problem?.testCases?.length ?? 0
+    if (count === 0) return
     setIsRunning(true)
     setActiveTab("result")
     setTestResults((prev) => prev.map((t) => ({ ...t, status: "running" as const })))
-    for (let i = 0; i < testResults.length; i++) {
-      await new Promise((r) => setTimeout(r, 500 + Math.random() * 500))
-      setTestResults((prev) =>
-        prev.map((t, index) =>
-          index === i
-            ? {
-                ...t,
-                status: Math.random() > 0.3 ? "passed" : "failed",
-                actualOutput: Math.random() > 0.3 ? t.expectedOutput : "[0,2]",
-                runtime: Math.floor(Math.random() * 50) + 10,
-              }
-            : t
+    try {
+      for (let i = 0; i < count; i++) {
+        await new Promise((r) => setTimeout(r, 400))
+        setTestResults((prev) =>
+          prev.map((t, index) =>
+            index === i
+              ? {
+                  ...t,
+                  status: "passed" as const,
+                  actualOutput: t.expectedOutput,
+                  runtime: Math.floor(Math.random() * 40) + 10,
+                }
+              : t
+          )
         )
-      )
+      }
+    } finally {
+      setIsRunning(false)
     }
-    setIsRunning(false)
   }
 
   const handleSubmit = async () => {
     if (isDBloaded) {
+      setSubmitError(null)
       setIsRunning(true)
       setActiveTab("result")
       setTestResults((prev) => prev.map((t) => ({ ...t, status: "running" as const })))
@@ -173,20 +250,64 @@ export default function ProblemPage({
           await new Promise((r) => setTimeout(r, 800))
           result = await submissionApi.pollResult(submissionId)
         }
-        const subs = result.submissions as { stdout: string | null; status_id: number }[]
-        setTestResults((prev) =>
-          prev.map((t, i) => {
+        type SubResult = { stdout: string | null; stderr: string | null; status_id: number }
+        const subs = result.submissions as SubResult[]
+        const statusIdToError = (id: number): string => {
+          if (id === 5) return "Time limit exceeded"
+          if (id === 6) return "Compilation error"
+          if (id > 6) return "Runtime error"
+          return "Error"
+        }
+        const normalizeOutput = (out: string): string =>
+          out
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .trim()
+            .split("\n")
+            .map((l) => l.trimEnd())
+            .join("\n")
+            .trimEnd()
+        setTestResults((prev) => {
+          const next = prev.map((t, i) => {
             const s = subs[i]
-            const passed = s?.status_id === 3
+            const actual = s?.stdout ?? ""
+            const expectedNorm = normalizeOutput(t.expectedOutput)
+            const actualNorm = normalizeOutput(actual)
+            const outputMatches = expectedNorm === actualNorm
+            const runCompleted = s?.status_id === 3 || s?.status_id === 4
+            const runError = s?.status_id != null && s.status_id >= 5
+            const passed =
+              runError ? false : (runCompleted && outputMatches)
+            const hasNoOutput = (s?.stdout ?? "").trim() === ""
+            const errorMessage =
+              hasNoOutput && s?.status_id != null && s.status_id >= 5
+                ? (s?.stderr?.trim() || statusIdToError(s.status_id))
+                : hasNoOutput && s?.stderr?.trim()
+                  ? s.stderr.trim()
+                  : undefined
+            const status: TestResult["status"] = runError
+              ? "error"
+              : passed
+                ? "passed"
+                : "failed"
             return {
               ...t,
-              status: passed ? "passed" : "failed",
+              status,
               actualOutput: s?.stdout ?? undefined,
               runtime: undefined,
+              errorMessage,
             }
           })
-        )
+          return next
+        })
+        if (result.status === "Accepted") {
+          queryClient.invalidateQueries({ queryKey: ["problem", slugOrId] })
+          queryClient.invalidateQueries({ queryKey: ["problems"] })
+          await queryClient.refetchQueries({ queryKey: ["problems"] })
+        }
       } catch (err) {
+        console.error("[Submit] error:", err)
+        setSubmitError(err instanceof Error ? err.message : "Submission failed")
         setTestResults((prev) =>
           prev.map((t) => ({ ...t, status: "error" as const }))
         )
@@ -219,6 +340,7 @@ export default function ProblemPage({
       : null
 
   return (
+    <AuthGuard>
     <div className="h-screen flex flex-col bg-background">
       <header className="flex items-center justify-between px-4 h-12 border-b border-border bg-card">
         <div className="flex items-center gap-3">
@@ -237,8 +359,13 @@ export default function ProblemPage({
                 </Button>
               </Link>
             )}
-            <span className="text-sm text-muted-foreground px-2">
+            <span className="text-sm text-muted-foreground px-2 flex items-center gap-1.5">
               {problem.id} {!isDBloaded && `/ ${localProblems.length}`}
+              {isDBloaded && problem.status === "solved" && (
+                <span title="Solved">
+                  <CheckCircle2 className="h-4 w-4 text-easy" aria-label="Solved" />
+                </span>
+              )}
             </span>
             {nextProblem && (
               <Link href={`/problem/${nextProblem.slug}`}>
@@ -349,15 +476,21 @@ export default function ProblemPage({
           <div className="flex-1 overflow-hidden">
             <CodeEditor
               value={code}
-              onChange={setCode}
+              onChange={handleCodeChange}
               language={languageKey}
               className="h-full"
             />
           </div>
 
-          <div className="h-[200px]">
-            <TestResults
-              results={
+          <div className="h-[200px] flex flex-col min-h-0">
+            {submitError && (
+              <div className="shrink-0 px-3 py-2 text-sm text-destructive bg-destructive/10 border-b border-border">
+                {submitError}
+              </div>
+            )}
+            <div className="flex-1 min-h-0">
+              <TestResults
+                results={
                 testResults.length > 0
                   ? testResults
                   : problem.testCases.map((tc, i) => ({
@@ -367,12 +500,14 @@ export default function ProblemPage({
                       status: "idle" as const,
                     }))
               }
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
+            </div>
           </div>
         </div>
       </div>
     </div>
+    </AuthGuard>
   )
 }

@@ -76,6 +76,8 @@ const JUDGE0_LANG_IDS = { javascript: 63, python: 71, cpp: 54 } as const;
 
 export type BackendDifficulty = "EASY" | "MEDIUM" | "HARD";
 
+export type BackendProblemStatus = "solved" | "attempted" | "unsolved";
+
 export interface BackendProblemList {
   id: string;
   name: string;
@@ -85,6 +87,7 @@ export interface BackendProblemList {
   memoryLimit: number;
   published: boolean;
   tags: { title: string }[];
+  status?: BackendProblemStatus;
 }
 
 export interface BackendProblemDetail extends BackendProblemList {
@@ -92,6 +95,7 @@ export interface BackendProblemDetail extends BackendProblemList {
   tags: { title: string }[];
   testCases: { input: string; expectedOutput: string }[];
   starterCodes: { languageId: number; code: string }[];
+  status?: BackendProblemStatus;
 }
 
 export interface SubmissionLanguage {
@@ -151,6 +155,33 @@ export const submissionApi = {
     }>(res);
     return json.data;
   },
+
+  async getLastAccepted(problemId: string) {
+    const res = await fetch(
+      `${API_BASE}/submission/problem/${encodeURIComponent(problemId)}/last-accepted`,
+      { ...defaultOptions, method: "GET" }
+    );
+    if (res.status === 404) return null;
+    const json = await handleResponse<{
+      success: true;
+      data: { submittedCode: string; languageId: number };
+    }>(res);
+    return json.data;
+  },
+
+  /** Last submission (any status) per language: { [languageId]: { submittedCode } } */
+  async getLastByLanguage(problemId: string) {
+    const res = await fetch(
+      `${API_BASE}/submission/problem/${encodeURIComponent(problemId)}/last-by-language`,
+      { ...defaultOptions, method: "GET" }
+    );
+    if (!res.ok) return null;
+    const json = await handleResponse<{
+      success: true;
+      data: Record<number, { submittedCode: string }>;
+    }>(res);
+    return json.data;
+  },
 };
 
 export function mapBackendProblemToList(p: BackendProblemList): import("./types").Problem {
@@ -167,6 +198,7 @@ export function mapBackendProblemToList(p: BackendProblemList): import("./types"
     testCases: [],
     acceptance: 0,
     submissions: 0,
+    status: p.status,
   };
 }
 
@@ -205,5 +237,6 @@ export function mapBackendProblemToDetail(p: BackendProblemDetail): import("./ty
     })),
     acceptance: 0,
     submissions: 0,
+    status: p.status,
   };
 }

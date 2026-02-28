@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import useEmblaCarousel from "embla-carousel-react"
 import { authApi } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { RedirectIfAuth } from "@/components/redirect-if-auth"
 
 const slides = [
   {
@@ -104,6 +105,7 @@ export default function AuthPage() {
   }
 
   return (
+    <RedirectIfAuth>
     <div className="min-h-screen flex">
       {/* Left side - Slideshow */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
@@ -303,5 +305,6 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    </RedirectIfAuth>
   )
 }

@@ -13,6 +13,8 @@ export interface TestResult {
   actualOutput?: string
   status: TestStatus
   runtime?: number
+  /** Shown when there is no stdout (e.g. compilation/runtime error) */
+  errorMessage?: string
 }
 
 interface TestResultsProps {
@@ -53,9 +55,9 @@ export function TestResults({ results, activeTab, onTabChange }: TestResultsProp
   }
 
   return (
-    <div className="h-full flex flex-col bg-card border-t border-border">
-      <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1 flex flex-col">
-        <div className="border-b border-border px-4">
+    <div className="h-full min-h-0 flex flex-col bg-card border-t border-border">
+      <Tabs value={activeTab} onValueChange={onTabChange} className="flex-1 min-h-0 flex flex-col">
+        <div className="shrink-0 border-b border-border px-4">
           <TabsList className="h-10 bg-transparent">
             <TabsTrigger value="testcase" className="text-xs">
               Testcase
@@ -66,7 +68,7 @@ export function TestResults({ results, activeTab, onTabChange }: TestResultsProp
           </TabsList>
         </div>
 
-        <TabsContent value="testcase" className="flex-1 p-4 m-0 overflow-y-auto">
+        <TabsContent value="testcase" className="flex-1 min-h-0 p-4 m-0 overflow-y-auto">
           <div className="space-y-3">
             {results.map((test) => (
               <div
@@ -86,7 +88,7 @@ export function TestResults({ results, activeTab, onTabChange }: TestResultsProp
           </div>
         </TabsContent>
 
-        <TabsContent value="result" className="flex-1 p-4 m-0 overflow-y-auto">
+        <TabsContent value="result" className="flex-1 min-h-0 p-4 m-0 overflow-y-auto">
           {results.some((r) => r.status !== "idle") ? (
             <div className="space-y-4">
               {results.map((test) => (
@@ -117,14 +119,21 @@ export function TestResults({ results, activeTab, onTabChange }: TestResultsProp
                     <div className="text-muted-foreground">
                       Expected: {test.expectedOutput}
                     </div>
-                    {test.actualOutput && (
-                      <div
-                        className={cn(
-                          test.status === "passed" ? "text-easy" : "text-hard"
+                    {(test.status === "passed" || test.status === "failed" || test.status === "error") && (
+                      <>
+                        <div
+                          className={cn(
+                            test.status === "passed" ? "text-easy" : "text-hard"
+                          )}
+                        >
+                          Output: {test.actualOutput ?? "(no output)"}
+                        </div>
+                        {test.errorMessage && (
+                          <div className="text-hard text-xs">
+                            Error: {test.errorMessage}
+                          </div>
                         )}
-                      >
-                        Output: {test.actualOutput}
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>

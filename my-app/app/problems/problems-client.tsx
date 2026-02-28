@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import type { Difficulty, ProblemStatus } from "@/lib/types"
 import type { Problem } from "@/lib/types"
+import { problemsApi, mapBackendProblemToList } from "@/lib/api"
 import { StatsCards } from "@/components/stats-cards"
 import { ProblemsTable } from "@/components/problems-table"
 import { ProblemFilters } from "@/components/problem-filters"
@@ -23,8 +25,20 @@ export function ProblemsPageClient({
   const [statuses, setStatuses] = useState<ProblemStatus[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
+  const { data: problems = initialProblems } = useQuery({
+    queryKey: ["problems"],
+    queryFn: async () => {
+      const data = await problemsApi.getAll()
+      return data.map(mapBackendProblemToList)
+    },
+    initialData: initialProblems,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  })
+
   const filteredProblems = useMemo(() => {
-    return initialProblems.filter((problem) => {
+    return problems.filter((problem) => {
       if (search) {
         const searchLower = search.toLowerCase()
         const matchesSearch =
@@ -46,9 +60,14 @@ export function ProblemsPageClient({
       }
       return true
     })
-  }, [search, difficulties, statuses, selectedTags, initialProblems])
+  }, [search, difficulties, statuses, selectedTags, problems])
 
-  const solvedCount = initialProblems.filter((p) => p.status === "solved").length
+  const solvedCount = problems.filter((p) => p.status === "solved").length
+  const totalProblems = problems.length
+  const effectiveTags = useMemo(
+    () => Array.from(new Set(problems.flatMap((p) => p.tags))).sort(),
+    [problems]
+  )
 
   return (
     <>
@@ -61,7 +80,7 @@ export function ProblemsPageClient({
       <div className="space-y-6">
         <StatsCards
           totalSolved={solvedCount}
-          totalProblems={initialProblems.length}
+          totalProblems={totalProblems}
           streak={7}
           rank={15423}
         />
@@ -75,7 +94,7 @@ export function ProblemsPageClient({
           onStatusChange={setStatuses}
           selectedTags={selectedTags}
           onTagsChange={setSelectedTags}
-          allTags={allTags}
+          allTags={effectiveTags.length > 0 ? effectiveTags : allTags}
         />
 
         <ProblemsTable problems={filteredProblems} />
