@@ -1,4 +1,5 @@
-import express, { Router } from "express";
+import express, { type Request, type Response, Router } from "express";
+import rateLimit from "express-rate-limit";
 import { signinSchema, signupSchema } from "../zod/auth.js";
 import { prisma } from "../lib/prisma.js";
 import { checkPassword, hashPassword } from "../helpers/passwordHelper.js";
@@ -15,7 +16,20 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const authRouter = express.Router();
 
-authRouter.post("/sign-up", async (req, res) => {
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 auth attempts per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req: Request, res: Response) => {
+        return res.status(429).json({
+            success: false,
+            message: "Too many auth attempts, please try again later.",
+        });
+    },
+});
+
+authRouter.post("/sign-up", authLimiter, async (req, res) => {
     const parsed = signupSchema.safeParse(req.body);
     if (!parsed.success)
         return sendError(res,400,"Invalid request schema.");
@@ -56,7 +70,7 @@ authRouter.post("/sign-up", async (req, res) => {
 
 })
 
-authRouter.post("/sign-in", async (req, res) => {
+authRouter.post("/sign-in", authLimiter, async (req, res) => {
     const parsed = signinSchema.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({

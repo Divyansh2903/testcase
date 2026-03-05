@@ -1,5 +1,6 @@
 import axios from "axios";
-import express from "express";
+import express, { type Request, type Response } from "express";
+import rateLimit from "express-rate-limit";
 import { JUDGE0_URL } from "../configs/constants.js";
 import type { JUDGE0_GET_TOKEN_RES, JUDGE0_RES_BODY, Language } from "../types/types.js";
 import { SUPPORTED_LANGUAGES } from "../configs/supportedLanguages.js";
@@ -8,6 +9,19 @@ import { sendError } from "../helpers/responseHelpers.js";
 import { prisma } from "../lib/prisma.js";
 
 const submissionRouter = express.Router();
+
+const submissionLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req: Request, res: Response) => {
+        return res.status(429).json({
+            success: false,
+            message: "Too many submissions, please try again later.",
+        });
+    },
+});
 
 
 function judge0StatusToRunStatus(statusId: number): "AC" | "WA" | "TLE" | "CE" | "RE" | "PENDING" {
@@ -54,7 +68,7 @@ submissionRouter.get("/languages", async (req, res) => {
 });
 
 submissionRouter.get("/problem/:problemId/last-accepted", async (req, res) => {
-    const problemId = req.params.problemId;
+    const problemId = String(req.params.problemId);
     if (!problemId) {
         return sendError(res, 400, "Problem id required");
     }
@@ -84,7 +98,11 @@ submissionRouter.get("/problem/:problemId/last-accepted", async (req, res) => {
 });
 
 submissionRouter.get("/problem/:problemId/last-by-language", async (req, res) => {
-    const problemId = req.params.problemId;
+    const problemIdParam = req.params.problemId;
+    if (typeof problemIdParam !== "string") {
+        return sendError(res, 400, "Problem id required");
+    }
+    const problemId = problemIdParam;
     if (!problemId) {
         return sendError(res, 400, "Problem id required");
     }
@@ -109,12 +127,16 @@ submissionRouter.get("/problem/:problemId/last-by-language", async (req, res) =>
     });
 });
 
-submissionRouter.post("/:problemId", async (req, res) => {
+submissionRouter.post("/:problemId", submissionLimiter, async (req, res) => {
     const parsed = submissionSchema.safeParse(req.body);
     if (!parsed.success) {
         return sendError(res, 400, "Invalid submission");
     }
-    const problemId = req.params.problemId;
+    const problemIdParam = req.params.problemId;
+    if (typeof problemIdParam !== "string" || problemIdParam.length === 0) {
+        return sendError(res, 400, "Problem id required");
+    }
+    const problemId = problemIdParam;
 
     try {
         const testCases = await prisma.testCase.findMany({

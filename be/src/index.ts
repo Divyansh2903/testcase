@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import authRouter from "./routes/auth.js";
 import problemRouter from "./routes/problem.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
@@ -12,12 +13,33 @@ dotenv.config();
 const app = express();
 const PORT = 4000;
 
+
+if (process.env.NODE_ENV === "production" || process.env.TRUST_PROXY === "true") {
+  app.set("trust proxy", 1);
+}
+
+
+const globalLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, //15 minutes
+  max: 100, 
+  standardHeaders: true,
+  legacyHeaders: false, 
+  handler: (_req: Request, res: Response) => {
+    return res.status(429).json({
+      success: false,
+      message: "Too many requests, please try again later.",
+    });
+  },
+});
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
   origin: FRONTEND_ORIGIN,
   credentials: true,
 }));
+app.use(globalLimiter);
+
 //routes
 app.use('/auth', authRouter);
 app.use('/problemset',authMiddleware, problemRouter);
@@ -28,7 +50,7 @@ app.get("/health",(req,res)=>{
 });
 
 
-//error handler
+
 app.use((err:Error,req:Request,res:Response,next:NextFunction)=>{
     return res.status(500).json({success:false,message:"Internal Server Error Occured"});
 })
